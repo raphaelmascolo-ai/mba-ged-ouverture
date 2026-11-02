@@ -55,17 +55,30 @@ jobs:
           files-folder: src-tauri/target/release/bundle
           files-folder-filter: msi,exe
           files-folder-recurse: true
+      # Les variables Apple ne sont posées que si les secrets existent : une variable vide ferait échouer la signature.
+      - name: Secrets de signature Apple (facultatifs)
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        env:
+          C: ${{ secrets.APPLE_CERTIFICATE }}
+          CP: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          SI: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          AI: ${{ secrets.APPLE_ID }}
+          AP: ${{ secrets.APPLE_PASSWORD }}
+          TI: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          [ -n "$C" ] && echo "APPLE_CERTIFICATE=$C" >> "$GITHUB_ENV"
+          [ -n "$CP" ] && echo "APPLE_CERTIFICATE_PASSWORD=$CP" >> "$GITHUB_ENV"
+          [ -n "$SI" ] && echo "APPLE_SIGNING_IDENTITY=$SI" >> "$GITHUB_ENV"
+          [ -n "$AI" ] && echo "APPLE_ID=$AI" >> "$GITHUB_ENV"
+          [ -n "$AP" ] && echo "APPLE_PASSWORD=$AP" >> "$GITHUB_ENV"
+          [ -n "$TI" ] && echo "APPLE_TEAM_ID=$TI" >> "$GITHUB_ENV"
+          echo "signature Apple : $([ -n "$C" ] && echo activée || echo absente, .dmg non signé)"
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
           releaseName: "MBA GED – Ouverture ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
