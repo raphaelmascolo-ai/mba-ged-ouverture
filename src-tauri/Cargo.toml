@@ -1,6 +1,6 @@
 [package]
 name = "mba-ged-ouverture"
-version = "0.1.0"
+version = "0.1.1"
 description = "MBA GED – Ouverture : ouvre les fichiers de la GED (AutoCAD, Archicad, …) depuis le dossier OneDrive synchronisé"
 authors = ["MBA Groupe SA"]
 edition = "2021"
