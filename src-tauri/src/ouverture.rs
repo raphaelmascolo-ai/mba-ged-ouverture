@@ -196,11 +196,11 @@ pub async fn ouvrir_charge(app: AppHandle, charge: api::Charge) {
     };
     if lancement.absente {
         journal::info(&format!("{} absent : ouvert avec {}", charge.application.libelle, lancement.application_utilisee));
-        api::evenement(&cle_suivi, "application_absente", serde_json::json!({ "application_utilisee": lancement.application_utilisee })).await;
+        api::evenement(&cle_suivi, "application_absente", serde_json::json!({ "application_utilisee": lancement.application_utilisee, "bibliotheque": charge.bibliotheque.cle, "dossier_local": racine.to_string_lossy() })).await;
         afficher(&app, Etat { titre: format!("{} n'est pas installé", charge.application.libelle), texte: format!("Le fichier a été ouvert avec {}. Installez {} pour l'ouvrir directement la prochaine fois.", lancement.application_utilisee, charge.application.libelle), boutons: vec![bouton("fermer", "Fermer", true)], occupe: false });
     } else {
         journal::info(&format!("ouvert dans {} ({})", charge.application.libelle, if lecture_seule { "lecture seule" } else { "modifier" }));
-        api::evenement(&cle_suivi, "ouvert", serde_json::json!({})).await;
+        api::evenement(&cle_suivi, "ouvert", serde_json::json!({ "bibliotheque": charge.bibliotheque.cle, "dossier_local": racine.to_string_lossy() })).await;
         masquer(&app);
     }
     // Suivi : activité toutes les 5 min tant que l'application tourne, « fermé » à la fin ; copie lecture seule effacée.

@@ -22,6 +22,7 @@ pub struct Bibliotheque {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[allow(dead_code)]
 pub struct Application {
     pub code: String,
     pub libelle: String,
@@ -30,11 +31,13 @@ pub struct Application {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[allow(dead_code)]
 pub struct Verrou {
     pub pris: bool,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[allow(dead_code)]
 pub struct Charge {
     pub nom_fichier: String,
     pub bibliotheque: Bibliotheque,
