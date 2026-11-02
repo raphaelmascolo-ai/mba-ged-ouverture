@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Fenêtre d'état de l'assistant : événements, actions (Synchroniser, Choisir le dossier, Réessayer, Fermer).",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus",
+    "opener:default",
+    "dialog:default",
+    "deep-link:default",
+    "updater:default"
+  ]
+}

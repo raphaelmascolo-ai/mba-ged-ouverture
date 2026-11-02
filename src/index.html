@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MBA GED – Ouverture</title>
+  <style>
+    /* Charte MBA Group (jetons repris de mba-ui.css : fond crème, noir, doré) */
+    :root { --mba-bg: #faf9f6; --mba-text: #111111; --mba-muted: #6b6b6b; --mba-border: #e6e3dc; --mba-gold: #fdd900; --mba-black: #111111; --mba-fill: #f1efe9; --mba-radius: 18px; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--mba-bg); color: var(--mba-text); font: 14px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif; -webkit-user-select: none; user-select: none; }
+    main { display: flex; flex-direction: column; gap: 14px; height: 100%; padding: 22px 24px; }
+    header { display: flex; align-items: center; gap: 10px; }
+    header .logo { width: 28px; height: 28px; border-radius: 8px; background: var(--mba-black); color: var(--mba-gold); display: grid; place-items: center; font-weight: 800; font-size: 11px; letter-spacing: .04em; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    p#texte { margin: 0; flex: 1; color: var(--mba-text); white-space: pre-line; overflow: auto; }
+    .occupe { display: none; align-items: center; gap: 10px; color: var(--mba-muted); font-size: 13px; }
+    .occupe.visible { display: flex; }
+    .spin { width: 14px; height: 14px; border: 2px solid var(--mba-border); border-top-color: var(--mba-black); border-radius: 50%; animation: r 1s linear infinite; }
+    @keyframes r { to { transform: rotate(360deg); } }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    button { appearance: none; border: 1px solid var(--mba-border); background: #fff; color: var(--mba-text); border-radius: 999px; height: 36px; padding: 0 14px; font: inherit; font-weight: 600; cursor: pointer; }
+    button.principal { background: var(--mba-gold); border-color: var(--mba-gold); color: var(--mba-black); }
+    button:focus-visible { outline: 2px solid var(--mba-black); outline-offset: 2px; }
+    footer { color: var(--mba-muted); font-size: 11.5px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header><div class="logo">MBA</div><h1 id="titre">MBA GED – Ouverture</h1></header>
+    <p id="texte">Prêt. Ouvrez un fichier depuis la GED : il s'ouvrira ici dans l'application du poste.</p>
+    <div class="occupe" id="occupe"><span class="spin"></span><span>Veuillez patienter…</span></div>
+    <nav id="boutons"></nav>
+    <footer id="pied"></footer>
+  </main>
+  <script>
+    const { invoke } = window.__TAURI__.core;
+    const { listen } = window.__TAURI__.event;
+    const el = (id) => document.getElementById(id);
+    function rendre(etat) {
+      el("titre").textContent = etat.titre || "MBA GED – Ouverture";
+      el("texte").textContent = etat.texte || "";
+      el("occupe").classList.toggle("visible", !!etat.occupe);
+      const nav = el("boutons"); nav.innerHTML = "";
+      for (const b of etat.boutons || []) {
+        const btn = document.createElement("button");
+        btn.textContent = b.libelle; if (b.principal) btn.className = "principal";
+        btn.addEventListener("click", () => invoke("action", { id: b.id }));
+        nav.appendChild(btn);
+      }
+      const p = nav.querySelector("button.principal"); if (p) p.focus();
+    }
+    listen("etat", (e) => rendre(e.payload));
+    invoke("etat_initial").then((i) => { el("pied").textContent = `v${i.version} · ${i.poste} · ${i.api}`; }).catch(() => {});
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") invoke("action", { id: "fermer" }); });
+  </script>
+</body>
+</html>
