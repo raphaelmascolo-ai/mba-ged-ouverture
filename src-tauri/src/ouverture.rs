@@ -219,7 +219,7 @@ pub async fn ouvrir_charge(app: AppHandle, charge: api::Charge) {
                 tokio::select! {
                     _ = fini.notified() => break,
                     _ = tokio::time::sleep(Duration::from_secs(300)) => {
-                        if modifier { api::evenement(&suivi, "activite", serde_json::json!({})).await; }
+                        if modifier && !api::evenement(&suivi, "activite", serde_json::json!({})).await { break; }
                     }
                 }
             }

@@ -64,6 +64,14 @@ pub fn ouvrir(app: &Application, fichier: &Path) -> Result<Lancement, String> {
                 }
             }
         }
+        // Application associée à l'extension (HKCR\.ext → ProgID → shell\open\command) : si c'est le même exécutable,
+        // l'application est bien là (ex. Acrobat installé sans entrée App Paths).
+        if exe.is_none() {
+            if let Some(par_defaut) = executable_associe(fichier) {
+                let meme = par_defaut.file_name().map(|n| n.to_string_lossy().eq_ignore_ascii_case(ident)).unwrap_or(false);
+                if meme { exe = Some(par_defaut); }
+            }
+        }
         if let Some(exe) = exe {
             let enfant = Command::new(&exe).arg(fichier).stdout(Stdio::null()).stderr(Stdio::null()).spawn().map_err(|e| format!("{} : {e}", exe.display()))?;
             return Ok(Lancement { enfant: Some(enfant), absente: false, application_utilisee: app.libelle.clone() });
@@ -78,6 +86,21 @@ pub fn ouvrir(app: &Application, fichier: &Path) -> Result<Lancement, String> {
         .spawn()
         .map_err(|e| format!("start : {e}"))?;
     Ok(Lancement { enfant: None, absente: true, application_utilisee: "l'application par défaut".into() })
+}
+
+/// Windows : exécutable de l'application associée à l'extension du fichier (registre), ou None.
+#[cfg(target_os = "windows")]
+fn executable_associe(fichier: &Path) -> Option<std::path::PathBuf> {
+    use winreg::enums::HKEY_CLASSES_ROOT;
+    use winreg::RegKey;
+    let ext = fichier.extension()?.to_string_lossy().to_lowercase();
+    let hkcr = RegKey::predef(HKEY_CLASSES_ROOT);
+    let progid: String = hkcr.open_subkey(format!(".{ext}")).ok()?.get_value("").ok()?;
+    let cmd: String = hkcr.open_subkey(format!("{progid}\\shell\\open\\command")).ok()?.get_value("").ok()?;
+    let cmd = cmd.trim();
+    let exe = if let Some(rest) = cmd.strip_prefix('"') { rest.split('"').next()?.to_string() } else { cmd.split(' ').next()?.to_string() };
+    let p = std::path::PathBuf::from(exe);
+    if p.is_file() { Some(p) } else { None }
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]

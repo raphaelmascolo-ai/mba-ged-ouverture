@@ -95,15 +95,17 @@ pub async fn echanger(jeton: &str) -> Result<Charge, ErreurEchange> {
     r.json::<Charge>().await.map_err(|e| ErreurEchange::Reseau(format!("réponse illisible : {e}")))
 }
 
-pub async fn evenement(cle: &str, type_: &str, details: serde_json::Value) {
+/// Renvoie false si le dashboard refuse la clé de suivi (expirée après 8 h) : inutile d'insister.
+pub async fn evenement(cle: &str, type_: &str, details: serde_json::Value) -> bool {
     let r = client()
         .post(format!("{}/api/ged/ouvrir/evenement", config::api_base()))
         .json(&serde_json::json!({ "cle": cle, "type": type_, "details": details }))
         .send()
         .await;
     match r {
-        Ok(r) if r.status().is_success() => crate::journal::info(&format!("événement {type_} transmis")),
-        Ok(r) => crate::journal::erreur(&format!("événement {type_} : HTTP {}", r.status())),
-        Err(e) => crate::journal::erreur(&format!("événement {type_} : {e}")),
+        Ok(r) if r.status().is_success() => { crate::journal::info(&format!("événement {type_} transmis")); true }
+        Ok(r) if r.status() == reqwest::StatusCode::FORBIDDEN => { crate::journal::info(&format!("événement {type_} : clé de suivi expirée, suivi arrêté")); false }
+        Ok(r) => { crate::journal::erreur(&format!("événement {type_} : HTTP {}", r.status())); true }
+        Err(e) => { crate::journal::erreur(&format!("événement {type_} : {e}")); true }
     }
 }
