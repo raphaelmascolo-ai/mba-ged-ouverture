@@ -1,6 +1,6 @@
 {
   "name": "mba-ged-ouverture",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "MBA GED – Ouverture : assistant d'ouverture des fichiers de la GED (Mac / Windows)",
   "scripts": {

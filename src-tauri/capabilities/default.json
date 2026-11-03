@@ -11,6 +11,7 @@
     "opener:default",
     "dialog:default",
     "deep-link:default",
-    "updater:default"
+    "updater:default",
+    "autostart:default"
   ]
 }

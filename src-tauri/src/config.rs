@@ -20,6 +20,9 @@ pub struct Config {
     /// Bibliothèque (clé) → nom du dossier OneDrive attendu (« <site> - <bibliothèque> »), appris aux échanges.
     #[serde(default)]
     pub bibliotheques: BTreeMap<String, String>,
+    /// Démarrage à la connexion déjà réglé une fois (sinon activé au premier lancement).
+    #[serde(default)]
+    pub autostart_regle: bool,
 }
 
 static ETAT: Mutex<Option<(PathBuf, Config)>> = Mutex::new(None);

@@ -11,7 +11,8 @@ mod ouvrir_app;
 
 use std::sync::Arc;
 
-use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder};
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
@@ -124,6 +125,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--au-demarrage"])))
         .manage(Arc::new(tokio::sync::Mutex::new(ouverture::Attente::default())) as AttentePartagee)
         .invoke_handler(tauri::generate_handler![action, etat_initial])
         .setup(|app| {
@@ -147,12 +149,21 @@ pub fn run() {
             app.deep_link().on_open_url(move |event| { traiter_urls(&h2, event.urls()); });
             if let Ok(Some(urls)) = app.deep_link().get_current() { traiter_urls(&handle, urls); }
 
+            // Démarrage à la connexion : activé une fois par défaut (l'utilisateur peut le décocher dans le menu).
+            let autostart = app.autolaunch();
+            if !config::actuelle().autostart_regle {
+                if let Err(e) = autostart.enable() { journal::erreur(&format!("démarrage automatique : {e}")); }
+                config::modifier(|c| c.autostart_regle = true);
+            }
+            let auto_actif = autostart.is_enabled().unwrap_or(false);
+
             // Barre de menus / zone de notification.
+            let m_auto = CheckMenuItemBuilder::with_id("autostart", "Lancer à la connexion").checked(auto_actif).build(app)?;
             let m_etat = MenuItemBuilder::with_id("etat", "État de l'assistant").build(app)?;
             let m_journal = MenuItemBuilder::with_id("journal", "Ouvrir le journal").build(app)?;
             let m_maj = MenuItemBuilder::with_id("maj", "Rechercher une mise à jour").build(app)?;
             let m_quitter = MenuItemBuilder::with_id("quitter", "Quitter").build(app)?;
-            let menu = MenuBuilder::new(app).items(&[&m_etat, &m_journal, &m_maj]).separator().items(&[&m_quitter]).build()?;
+            let menu = MenuBuilder::new(app).items(&[&m_etat, &m_journal, &m_maj]).separator().items(&[&m_auto]).separator().items(&[&m_quitter]).build()?;
             let icone = app.default_window_icon().cloned().expect("icône");
             TrayIconBuilder::with_id("principal")
                 .icon(icone)
@@ -163,6 +174,12 @@ pub fn run() {
                     "etat" => etat_general(app),
                     "journal" => { if let Some(p) = journal::chemin() { let _ = app.opener().open_path(p.to_string_lossy().to_string(), None::<&str>); } }
                     "maj" => { let a = app.clone(); tauri::async_runtime::spawn(async move { verifier_mise_a_jour(a, true).await; }); }
+                    "autostart" => {
+                        let al = app.autolaunch();
+                        let actif = al.is_enabled().unwrap_or(false);
+                        let r = if actif { al.disable() } else { al.enable() };
+                        match r { Ok(()) => journal::info(&format!("démarrage à la connexion : {}", if actif { "désactivé" } else { "activé" })), Err(e) => journal::erreur(&format!("démarrage à la connexion : {e}")) }
+                    }
                     "quitter" => app.exit(0),
                     _ => {}
                 })

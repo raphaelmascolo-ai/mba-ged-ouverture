@@ -1,6 +1,6 @@
 [package]
 name = "mba-ged-ouverture"
-version = "0.1.1"
+version = "0.1.2"
 description = "MBA GED – Ouverture : ouvre les fichiers de la GED (AutoCAD, Archicad, …) depuis le dossier OneDrive synchronisé"
 authors = ["MBA Groupe SA"]
 edition = "2021"
@@ -20,6 +20,7 @@ tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 tauri-plugin-updater = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-autostart = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
