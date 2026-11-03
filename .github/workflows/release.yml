@@ -100,3 +100,15 @@ jobs:
           msi=$(ls release/bundle/msi/*.msi 2>/dev/null | head -1 || true)
           if [ -n "$dmg" ]; then cp "$dmg" MBA-GED-Ouverture.dmg; gh release upload "$TAG" MBA-GED-Ouverture.dmg --clobber; fi
           if [ -n "$msi" ]; then cp "$msi" MBA-GED-Ouverture.msi; gh release upload "$TAG" MBA-GED-Ouverture.msi --clobber; fi
+
+  # latest.json pour la mise à jour automatique : composé après les deux constructions depuis les signatures publiées.
+  latest-json:
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Composer et publier latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts-latest-json.sh "${{ github.ref_name }}"
